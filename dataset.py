@@ -9,9 +9,12 @@ import torch.utils.data as data
 import numpy as np
 
 class ScalarDataset(data.Dataset):
-    def __init__(self, N):
+    def __init__(self, N, test=False):
         self.N = N
-        self.X, self.Y = build_dataset(N)
+        if test:
+            self.X, self.Y = build_dataset_size_4()
+        else:
+            self.X, self.Y = build_dataset(N)
         print(self.X.shape, self.Y.shape)
 
     def __len__(self):
@@ -26,6 +29,18 @@ class ScalarDataset(data.Dataset):
         data_y = torch.from_numpy(data_y).float()
 
         return data_x, data_y
+
+def build_dataset_size_4():
+    X = np.array([-3,-1,1,3])
+    Y = np.zeros((4,))
+    Y[X<3] = -1
+    Y[X==3] = 1
+
+    assert X.ndim == 1 and Y.ndim == 1
+    X = X.reshape((4,1))
+    Y = Y.reshape((4,1))
+
+    return X, Y
 
 def build_dataset(N):
     X = np.array([-3,-1,1,3])
