@@ -3,27 +3,32 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
 from torch import optim
 
-from dataset import ScalarDataset
+from dataset import ScalarDataset, build_dataset
 from model import Model, NoiseModel
+
+
+def sample(m, num_samp=1000):
+    X, _ = build_dataset(num_samp)
+    output = m(torch.from_numpy(X).float().to(device))
+    return output
 
 
 def test_model(m, test_loader):
     avg_acc = 0
     num_batch = 0
     for _, (test_x, test_y) in enumerate(test_loader):
-        print(test_x.size())
         test_out = m(test_x.to(device))
         avg_acc += compute_acc(test_out.detach().cpu().numpy(), test_y.detach().cpu().numpy())
         num_batch += 1
+
     avg_acc /= num_batch
+    assert num_batch == 1
+
     return avg_acc, test_out, test_y
 
 
@@ -37,16 +42,19 @@ def compute_acc(model_out, true_out):
 
 
 if __name__ == "__main__":
+    # python train.py --epochs 200 --beta 0.05 --noise True --lr 0.001
+
     # Sample size
-    N = 50
+    N = 30
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--epochs', type=int, default=1000)
     parser.add_argument('--batch_size', type=int, default=25)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--beta', type=float, default=0.05)
     parser.add_argument('--noise', type=bool, default=False)
+    parser.add_argument('--lr', type=float, default=0.01)
     args = parser.parse_args()
 
     # Use GPU or not
@@ -61,12 +69,15 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
+    # Learning rate
+    print("Learning rate:", args.lr)
+
     # Datasets
     train_dataset = ScalarDataset(N, test=False)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False)
 
-    test_dataset = ScalarDataset(4, test=True)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=4, shuffle=False)
+    test_dataset = ScalarDataset(N, test=False)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=N, shuffle=False)
 
     # Model
     if not args.noise:
@@ -76,19 +87,19 @@ if __name__ == "__main__":
     m = m.to(device)
 
     # Optimizer
-    optimizer = optim.SGD(m.parameters(), lr=0.01)
+    optimizer = optim.SGD(m.parameters(), lr=args.lr)
     loss_func = nn.MSELoss()
 
     # Start the training
     accs = np.zeros((args.epochs,))
     for i in xrange(args.epochs):
-        if (i+1) % 10 == 0:
+        if (i+1) % 1 == 0:
             print("Epoch", i+1)
             m.eval()
             acc, test_out, test_y = test_model(m, test_loader)
-            # Here, we're just saving the means (i.e. in eval phase, no noise is added to
-            # the neuron's output). Not sure of exact implementation in Goldfeld et. al 2018
             np.save("results/epoch_{}_outputs.npy".format(i+1), test_out.detach().cpu().numpy())
+            gen_noise_outputs = sample(m)
+            np.save("results/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
             accs[i] = acc
 
         m.train()
@@ -107,8 +118,7 @@ if __name__ == "__main__":
 
     from dataset import build_dataset
     new_set_x, new_set_y = build_dataset(10)
-#    model_y = np.tanh(156.4934*new_set_x - 329.3788)
-    model_y = np.tanh(235.1966*new_set_x - 492.9878)
+    model_y = np.tanh(6.9393*new_set_x - 14.2929)
     print("True out:", new_set_y.T)
     print("Model out:",  model_y.T)
     new_set_x, new_set_y = build_dataset(10)
@@ -116,4 +126,5 @@ if __name__ == "__main__":
     print("Random out label:", new_set_y.T)
 
     np.save("results/accuracies.npy", accs)
+
 
