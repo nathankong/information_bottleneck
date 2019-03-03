@@ -98,6 +98,8 @@ if __name__ == "__main__":
             m.eval()
             acc, test_out, test_y = test_model(m, test_loader)
             np.save("results/epoch_{}_outputs.npy".format(i+1), test_out.detach().cpu().numpy())
+
+            # Get noise samples
             gen_noise_outputs = sample(m)
             np.save("results/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
             accs[i] = acc
