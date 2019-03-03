@@ -10,26 +10,28 @@ from torch import optim
 
 from dataset import ScalarDataset, build_dataset
 from model import Model, NoiseModel
+from mutual_information_estimator import MutualInformationEstimator
+from utils import UnivariateGaussian, UniformDataDistribution
 
 
 def sample(m, num_samp=1000):
     X, _ = build_dataset(num_samp)
-    output = m(torch.from_numpy(X).float().to(device))
-    return output
+    output_noise, output = m(torch.from_numpy(X).float().to(device))
+    return output_noise, output
 
 
 def test_model(m, test_loader):
     avg_acc = 0
     num_batch = 0
     for _, (test_x, test_y) in enumerate(test_loader):
-        test_out = m(test_x.to(device))
-        avg_acc += compute_acc(test_out.detach().cpu().numpy(), test_y.detach().cpu().numpy())
+        test_out_noise, _ = m(test_x.to(device))
+        avg_acc += compute_acc(test_out_noise.detach().cpu().numpy(), test_y.detach().cpu().numpy())
         num_batch += 1
 
     avg_acc /= num_batch
     assert num_batch == 1
 
-    return avg_acc, test_out, test_y
+    return avg_acc, test_out_noise, test_y
 
 
 def compute_acc(model_out, true_out):
@@ -90,26 +92,45 @@ if __name__ == "__main__":
     optimizer = optim.SGD(m.parameters(), lr=args.lr)
     loss_func = nn.MSELoss()
 
+    # Set up probability distributions
+    noise_distr = UnivariateGaussian(0, args.beta)
+    # The '4' is hard coded since the dataset is {-3,-1,1,3}
+    data_distr = UniformDataDistribution(4) 
+
+    # Mutual information estimator
+    mi = MutualInformationEstimator(
+        m,
+        device,
+        noise_distr.compute_probability,
+        data_distr.compute_probability,
+        np.array([-3,-1,1,3]).reshape(4,1)
+    )
+
     # Start the training
     accs = np.zeros((args.epochs,))
+    mutual_info = np.zeros((args.epochs,))
     for i in xrange(args.epochs):
         if (i+1) % 1 == 0:
             print("Epoch", i+1)
             m.eval()
-            acc, test_out, test_y = test_model(m, test_loader)
-            np.save("results/epoch_{}_outputs.npy".format(i+1), test_out.detach().cpu().numpy())
+            acc, test_out_noise, test_y = test_model(m, test_loader)
+            accs[i] = acc
+            #np.save("results/epoch_{}_outputs.npy".format(i+1), test_out_noise.detach().cpu().numpy())
 
             # Get noise samples
-            gen_noise_outputs = sample(m)
+            gen_noise_outputs, gen_outputs = sample(m)
             np.save("results/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
-            accs[i] = acc
+
+            # Compute MI
+            curr_mutual_info = mi.compute_mutual_information(gen_outputs.detach().cpu().numpy(), 500)
+            mutual_info[i] = curr_mutual_info
 
         m.train()
         for batch_idx, (data_x, data_y) in enumerate(train_loader):
             data_x, data_y = data_x.to(device), data_y.to(device) 
 
-            output = m(data_x)
-            loss = loss_func(output, data_y)
+            output_noise, _ = m(data_x)
+            loss = loss_func(output_noise, data_y)
             loss.backward()
             optimizer.step()
 
@@ -127,6 +148,9 @@ if __name__ == "__main__":
     print("Random out:", new_set_x.T)
     print("Random out label:", new_set_y.T)
 
+    # Save stuff
     np.save("results/accuracies.npy", accs)
+    np.save("results/mutual_information.npy", mutual_info)
+
 
 

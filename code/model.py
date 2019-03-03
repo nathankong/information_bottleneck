@@ -32,6 +32,6 @@ class NoiseModel(nn.Module):
         ps = torch.tanh(h)
         # Add noise from N(0, beta^2)
         z = torch.randn(x.size(), device=x.device) * self.beta
-        ps = ps + z
-        return ps
+        ps_noise = ps + z
+        return ps_noise, ps
 

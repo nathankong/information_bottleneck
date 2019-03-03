@@ -14,7 +14,7 @@ def sample_univariate_gaussian(N, mu, var):
     std = np.sqrt(var)
     return np.random.normal(N, mu, std)
 
-def compute_probability_univariate_normal(x, mu, var)
+def compute_probability_scalar_gaussian_data(x, mu, var):
     # x can be a row vector or a scalar
     # Computes P(x), where P is N(mu,var)
     assert x.ndim == 1 or isinstance(x, int)
@@ -22,17 +22,26 @@ def compute_probability_univariate_normal(x, mu, var)
     std = np.sqrt(var)
     return scipy.stats.norm(mu,std).pdf(x)
 
-def compute_probability_uniform_data(num_outcomes):
-    # Computes the probability of a sample from a uniform input data distribution
-    return 1./num_outcomes
 
-def compute_probability_scalar_gaussian_data(x, mu, var)
-    # x can be a row vector or a scalar
-    # Computes P(x), where P is N(mu,var)
-    assert x.ndim == 1 or isinstance(x, int)
+class UnivariateGaussian():
+    def __init__(self, mu, var):
+        self.mu = mu
+        self.var = var
 
-    std = np.sqrt(var)
-    return scipy.stats.norm(mu,std).pdf(x)
+    def compute_probability(self, x):
+        # x is a column vector
+        # Computes P(x), where P is N(mu,var)
+        std = np.sqrt(self.var)
+        return scipy.stats.norm(self.mu,std).pdf(x)
+
+
+class UniformDataDistribution():
+    def __init__(self, total_outcomes):
+        self.total_outcomes = total_outcomes
+
+    def compute_probability(self, x):
+        # Computes the probability of a sample from a uniform input data distribution
+        return 1. / self.total_outcomes
 
 
 if __name__ == "__main__":
