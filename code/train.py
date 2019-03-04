@@ -56,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--beta', type=float, default=0.05)
     parser.add_argument('--noise', type=bool, default=False)
-    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--lr', type=float, default=0.001)
     args = parser.parse_args()
 
     # Use GPU or not
@@ -111,7 +111,6 @@ if __name__ == "__main__":
     mutual_info = np.zeros((args.epochs,))
     for i in xrange(args.epochs):
         if (i+1) % 1 == 0:
-            print("Epoch", i+1)
             m.eval()
             acc, test_out_noise, test_y = test_model(m, test_loader)
             accs[i] = acc
@@ -124,6 +123,8 @@ if __name__ == "__main__":
             # Compute MI
             curr_mutual_info = mi.compute_mutual_information(gen_outputs.detach().cpu().numpy(), 500)
             mutual_info[i] = curr_mutual_info
+
+            print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
 
         m.train()
         for batch_idx, (data_x, data_y) in enumerate(train_loader):
