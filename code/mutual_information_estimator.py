@@ -38,18 +38,19 @@ class MutualInformationEstimator():
 
     def compute_conditional_entropy(self, sample, num_samples_per_outcome):
         # Compute outputs for sample from different noise realizations
+        assert sample.shape[0] == 1
         inputs = np.tile(sample, (num_samples_per_outcome,1))
-        model_outputs_noise, _ = self.model(torch.from_numpy(inputs).float().to(self.device))
-        model_outputs_noise = model_outputs_noise.detach().cpu().numpy()
+        _, model_outputs = self.model(torch.from_numpy(inputs).float().to(self.device))
+        model_outputs = model_outputs.detach().cpu().numpy()
 
         # estimated_conditional_distribution is the estimated distribution for 
         # p_{T_\ell | X = x_i} = p_{S_\ell | X = x_i} \ast \phi \approx \hat{p}_{S_\ell}^{(i)} \ast \phi
         estimated_conditional_distribution = lambda x: (1./num_samples_per_outcome)* \
-                                                np.sum(self.noise_distribution(x - model_outputs_noise))
+                                                np.sum(self.noise_distribution(x - model_outputs))
         integrand = lambda x: -1. * estimated_conditional_distribution(x) * np.log(estimated_conditional_distribution(x) + self.tol)
 
         # SP estimator: h(p_{T_\ell | X = x_i}) \approx h(\hat{p}_{S_{\ell}^{(i)}} \ast \phi)
-        conditional_entropy, _ = integrate.quad(integrand, -1000, 1000)
+        conditional_entropy, _ = integrate.quad(integrand, -10, 10)
 
         return conditional_entropy
 
@@ -61,15 +62,18 @@ class MutualInformationEstimator():
         assert samples.shape[1] == 1
 
         num_samples = samples.shape[0]
+        #print(num_samples)
 
         # TODO: Since we are assuming that hidden dimension is 1, 'x' is a scalar here
         estimated_distribution = lambda x: (1./num_samples)*np.sum(self.noise_distribution(x - samples))
+        #print((estimated_distribution(0)))
 
         # Integrand for computing the entropy. i.e. f(x) log (1/f(x))
         integrand = lambda x: -1. * estimated_distribution(x) * np.log(estimated_distribution(x) + self.tol)
 
         # SP estimator: h(p_{T_\ell}) \approx h(\hat{p}_{S_\ell} \ast \phi)
-        unconditional_entropy, _ = integrate.quad(integrand, -1000, 1000)
+        unconditional_entropy, _ = integrate.quad(integrand, -10, 10)
+        #print(unconditional_entropy, err)
 
         return unconditional_entropy
 

@@ -93,7 +93,7 @@ if __name__ == "__main__":
     loss_func = nn.MSELoss()
 
     # Set up probability distributions
-    noise_distr = UnivariateGaussian(0, args.beta)
+    noise_distr = UnivariateGaussian(0, np.square(args.beta))
     # The '4' is hard coded since the dataset is {-3,-1,1,3}
     data_distr = UniformDataDistribution(4) 
 
@@ -117,7 +117,7 @@ if __name__ == "__main__":
             #np.save("results/epoch_{}_outputs.npy".format(i+1), test_out_noise.detach().cpu().numpy())
 
             # Get noise samples
-            gen_noise_outputs, gen_outputs = sample(m)
+            gen_noise_outputs, gen_outputs = sample(m, num_samp=500)
             np.save("results/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
 
             # Compute MI
