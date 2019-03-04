@@ -117,11 +117,11 @@ if __name__ == "__main__":
             #np.save("results/epoch_{}_outputs.npy".format(i+1), test_out_noise.detach().cpu().numpy())
 
             # Get noise samples
-            gen_noise_outputs, gen_outputs = sample(m, num_samp=500)
+            gen_noise_outputs, gen_outputs = sample(m, num_samp=1000)
             np.save("results/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
 
             # Compute MI
-            curr_mutual_info = mi.compute_mutual_information(gen_outputs.detach().cpu().numpy(), 500)
+            curr_mutual_info = mi.compute_mutual_information(gen_outputs.detach().cpu().numpy(), 1000)
             mutual_info[i] = curr_mutual_info
 
             print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
