@@ -8,16 +8,16 @@ import torch
 import torch.nn as nn
 from torch import optim
 
-from dataset import ScalarDataset, build_dataset
-from model import Model, NoiseModel
+from dataset import ScalarDatasetEight, build_dataset_eight
+from model import NoiseModelReLU
 from mutual_information_estimator import MutualInformationEstimator
 from utils import UnivariateGaussian, UniformDataDistribution
 
 
 def sample(m, num_samp=1000):
-    X, _ = build_dataset(num_samp)
-    output_noise, output = m(torch.from_numpy(X).float().to(device))
-    return output_noise, output
+    X, _ = build_dataset_eight(num_samp)
+    output_noise, output_dict = m(torch.from_numpy(X).float().to(device))
+    return output_noise, output_dict
 
 
 def test_model(m, test_loader):
@@ -35,16 +35,15 @@ def test_model(m, test_loader):
 
 
 def compute_acc(model_out, true_out):
-    # model_out = tanh values
     assert model_out.shape[0] == true_out.shape[0]
-    model_out[model_out<=0] = -1
-    model_out[model_out>0] = 1
+    model_out[model_out<=0.125] = 0
+    model_out[model_out>0.125] = 0.25
     correct = np.sum((model_out==true_out).astype(int))
     return correct / true_out.shape[0]
 
 
 if __name__ == "__main__":
-    # python train.py --epochs 200 --beta 0.05 --noise True --lr 0.001
+    # python train.py --epochs 500 --beta 0.05 --noise True --lr 0.001
 
     # Sample size
     N = 30
@@ -75,17 +74,17 @@ if __name__ == "__main__":
     print("Learning rate:", args.lr)
 
     # Datasets
-    train_dataset = ScalarDataset(N, test=False)
+    train_dataset = ScalarDatasetEight(N)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False)
 
-    test_dataset = ScalarDataset(N, test=False)
+    test_dataset = ScalarDatasetEight(N)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=N, shuffle=False)
 
     # Model
     if not args.noise:
-        m = Model() # Default dim=1
+        assert 0, "Should only run noise model."
     else:
-        m = NoiseModel(beta=args.beta) # Add noise to layer
+        m = NoiseModelReLU(beta=args.beta) # Add noise to layer
     m = m.to(device)
 
     # Optimizer
@@ -94,8 +93,8 @@ if __name__ == "__main__":
 
     # Set up probability distributions
     noise_distr = UnivariateGaussian(0, np.square(args.beta))
-    # The '4' is hard coded since the dataset is {-3,-1,1,3}
-    data_distr = UniformDataDistribution(4) 
+    # The '8' is hard coded since the dataset is {1,2,3,4,5,6,7,8}
+    data_distr = UniformDataDistribution(8) 
 
     # Mutual information estimator
     mi = MutualInformationEstimator(
@@ -103,25 +102,32 @@ if __name__ == "__main__":
         device,
         noise_distr.compute_probability,
         data_distr.compute_probability,
-        np.array([-3,-1,1,3]).reshape(4,1)
+        np.array([1,2,3,4,5,6,7,8]).reshape(8,1)
     )
 
     # Start the training
     accs = np.zeros((args.epochs,))
     mutual_info = np.zeros((args.epochs,))
     for i in xrange(args.epochs):
+        if i == 0:
+            for param in m.parameters():
+                print("Weight:", param.data)
+
         if (i+1) % 1 == 0:
             m.eval()
             acc, test_out_noise, test_y = test_model(m, test_loader)
             accs[i] = acc
-            #np.save("results/epoch_{}_outputs.npy".format(i+1), test_out_noise.detach().cpu().numpy())
 
             # Get noise samples
-            gen_noise_outputs, gen_outputs = sample(m, num_samp=1000)
-            np.save("results/four/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
+            gen_noise_outputs, output_dict = sample(m, num_samp=1000)
+            np.save("results/eight/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
+            np.save("results/eight/epoch_{}_h1_noise.npy".format(i+1), output_dict["hidden_noise"].detach().cpu().numpy())
 
+            # TODO: Call compute_mutual_information() twice for each layer
             # Compute MI
-            curr_mutual_info = mi.compute_mutual_information(gen_outputs.detach().cpu().numpy(), 1000)
+            #curr_mutual_info = mi.compute_mutual_information(gen_outputs.detach().cpu().numpy(), 1000)
+            #mutual_info[i] = curr_mutual_info
+            curr_mutual_info = 0
             mutual_info[i] = curr_mutual_info
 
             print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
@@ -134,23 +140,28 @@ if __name__ == "__main__":
             loss = loss_func(output_noise, data_y)
             loss.backward()
             optimizer.step()
+            print("Loss val {}".format(loss.item()))
 
 
     # Diagnostics
     for param in m.parameters():
         print("Weight:", param.data)
 
-    new_set_x, new_set_y = build_dataset(10)
-    model_y = np.tanh(6.9393*new_set_x - 14.2929)
+    new_set_x, new_set_y = build_dataset_eight(10)
+    model_y = -2.7527*new_set_x + 3.8919
+    model_y = np.where(model_y > 0, model_y, model_y * 0.1)
+    model_y = -0.4081*model_y - 0.1576
+    model_y = np.where(model_y > 0, model_y, model_y * 0.1)
+    print("New set x:", new_set_x)
     print("True out:", new_set_y.T)
     print("Model out:",  model_y.T)
-    new_set_x, new_set_y = build_dataset(10)
+    new_set_x, new_set_y = build_dataset_eight(10)
     print("Random out:", new_set_x.T)
     print("Random out label:", new_set_y.T)
 
     # Save stuff
-    np.save("results/four/accuracies.npy", accs)
-    np.save("results/four/mutual_information.npy", mutual_info)
+    np.save("results/eight/accuracies.npy", accs)
+    np.save("results/eight/mutual_information.npy", mutual_info)
 
 
 
