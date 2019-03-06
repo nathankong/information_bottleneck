@@ -43,10 +43,10 @@ def compute_acc(model_out, true_out):
 
 
 if __name__ == "__main__":
-    # python train.py --epochs 500 --beta 0.05 --noise True --lr 0.001
+    # python information_bottleneck/code/train_eight.py --epochs 300 --batch_size 100 --noise True --beta 0.05 --lr 0.0001
 
     # Sample size
-    N = 30
+    N = 100
 
     import argparse
     parser = argparse.ArgumentParser()
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # Datasets
     train_dataset = ScalarDatasetEight(N)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
     test_dataset = ScalarDatasetEight(N)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=N, shuffle=False)
@@ -106,17 +106,14 @@ if __name__ == "__main__":
     )
 
     # Start the training
-    accs = np.zeros((args.epochs,))
-    mutual_info = np.zeros((args.epochs,))
+    accs = list()
+    mutual_info = list()
+    losses = list()
     for i in xrange(args.epochs):
-        if i == 0:
-            for param in m.parameters():
-                print("Weight:", param.data)
-
         if (i+1) % 1 == 0:
             m.eval()
             acc, test_out_noise, test_y = test_model(m, test_loader)
-            accs[i] = acc
+            accs.append(acc)
 
             # Get noise samples
             gen_noise_outputs, output_dict = sample(m, num_samp=1000)
@@ -128,9 +125,12 @@ if __name__ == "__main__":
             #curr_mutual_info = mi.compute_mutual_information(gen_outputs.detach().cpu().numpy(), 1000)
             #mutual_info[i] = curr_mutual_info
             curr_mutual_info = 0
-            mutual_info[i] = curr_mutual_info
+            mutual_info.append(curr_mutual_info)
 
             print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
+            if acc >= 0.99:
+                for g in optimizer.param_groups:
+                    g['lr'] = args.lr / 20.
 
         m.train()
         for batch_idx, (data_x, data_y) in enumerate(train_loader):
@@ -140,7 +140,8 @@ if __name__ == "__main__":
             loss = loss_func(output_noise, data_y)
             loss.backward()
             optimizer.step()
-            print("Loss val {}".format(loss.item()))
+            #print("Loss val {}".format(loss.item()))
+            losses.append(loss.item())
 
 
     # Diagnostics
@@ -148,10 +149,10 @@ if __name__ == "__main__":
         print("Weight:", param.data)
 
     new_set_x, new_set_y = build_dataset_eight(10)
-    model_y = -2.7527*new_set_x + 3.8919
-    model_y = np.where(model_y > 0, model_y, model_y * 0.1)
-    model_y = -0.4081*model_y - 0.1576
-    model_y = np.where(model_y > 0, model_y, model_y * 0.1)
+    model_y = -0.88*new_set_x + 4.3
+    model_y = np.maximum(model_y, model_y/10)
+    model_y = -0.23*model_y + 0.24
+    model_y = np.maximum(model_y, model_y/10)
     print("New set x:", new_set_x)
     print("True out:", new_set_y.T)
     print("Model out:",  model_y.T)
@@ -160,8 +161,9 @@ if __name__ == "__main__":
     print("Random out label:", new_set_y.T)
 
     # Save stuff
-    np.save("results/eight/accuracies.npy", accs)
-    np.save("results/eight/mutual_information.npy", mutual_info)
+    np.save("results/eight/accuracies.npy", np.array(accs))
+    np.save("results/eight/mutual_information.npy", np.array(mutual_info))
+    np.save("results/eight/losses.npy", np.array(losses))
 
 
 
