@@ -70,13 +70,15 @@ class NoiseModelReLU(nn.Module):
 
     def forward(self, x):
         h = self.leaky_relu(self.lin_x_to_h1(x))
-        #h = self.lin_x_to_h1(x)
-        #h = torch.max(h, h/10.)
+        #h_lin = self.lin_x_to_h1(x)
+        #h = torch.max(h_lin, h_lin/10.)
+
         h_noise = h + (torch.randn(h.size(), device=x.device) * self.beta)
 
         out = self.leaky_relu(self.lin_h1_to_output(h_noise))
-        #h_noise = self.lin_h1_to_output(h_noise)
-        #out = torch.max(h_noise, h_noise/10.)
+        #h_noise_lin = self.lin_h1_to_output(h_noise)
+        #out = torch.max(h_noise_lin, h_noise_lin/10.)
+
         out_noise = out + (torch.randn(out.size(), device=x.device) * self.beta)
 
         activation_dict = dict()
