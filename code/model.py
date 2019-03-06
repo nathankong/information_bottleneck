@@ -40,7 +40,11 @@ class NoiseModel(nn.Module):
         z = torch.randn(x.size(), device=x.device) * self.beta
         ps_noise = ps + z
 
-        return ps_noise, ps
+        activation_dict = dict()
+        activation_dict["output"] = ps
+        activation_dict["output_noise"] = ps_noise
+
+        return ps_noise, activation_dict
 
 class NoiseModelReLU(nn.Module):
     # Assuming single dimension only

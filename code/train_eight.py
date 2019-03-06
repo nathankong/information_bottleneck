@@ -107,7 +107,8 @@ if __name__ == "__main__":
 
     # Start the training
     accs = list()
-    mutual_info = list()
+    mutual_info_layer1 = list()
+    mutual_info_layer2 = list()
     losses = list()
     for i in xrange(args.epochs):
         if (i+1) % 1 == 0:
@@ -120,14 +121,26 @@ if __name__ == "__main__":
             np.save("results/eight/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
             np.save("results/eight/epoch_{}_h1_noise.npy".format(i+1), output_dict["hidden_noise"].detach().cpu().numpy())
 
-            # TODO: Call compute_mutual_information() twice for each layer
             # Compute MI
-            #curr_mutual_info = mi.compute_mutual_information(gen_outputs.detach().cpu().numpy(), 1000)
-            #mutual_info[i] = curr_mutual_info
-            curr_mutual_info = 0
-            mutual_info.append(curr_mutual_info)
+            curr_mutual_info_1 = mi.compute_mutual_information(
+                output_dict["hidden"].detach().cpu().numpy(),
+                1000,
+                "hidden"
+            )
+            mutual_info_layer1.append(curr_mutual_info_1)
+            curr_mutual_info_2 = mi.compute_mutual_information(
+                output_dict["output"].detach().cpu().numpy(),
+                1000,
+                "output"
+            )
+            mutual_info_layer2.append(curr_mutual_info_2)
 
-            print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
+            print("Epoch {}; Layer 1 MI {}; Layer 2 MI {}; Acc {}".format(
+                i+1,
+                curr_mutual_info_1,
+                curr_mutual_info_2,
+                acc)
+            )
             if acc >= 0.99:
                 for g in optimizer.param_groups:
                     g['lr'] = args.lr / 20.
@@ -162,7 +175,8 @@ if __name__ == "__main__":
 
     # Save stuff
     np.save("results/eight/accuracies.npy", np.array(accs))
-    np.save("results/eight/mutual_information.npy", np.array(mutual_info))
+    np.save("results/eight/mutual_information_layer1.npy", np.array(mutual_info_layer1))
+    np.save("results/eight/mutual_information_layer2.npy", np.array(mutual_info_layer2))
     np.save("results/eight/losses.npy", np.array(losses))
 
 

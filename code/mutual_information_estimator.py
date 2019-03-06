@@ -21,7 +21,7 @@ class MutualInformationEstimator():
         self.input_dataset = input_dataset
         self.tol = 1e-10
 
-    def compute_mutual_information(self, layer_samples, num_samples_per_outcome):
+    def compute_mutual_information(self, layer_samples, num_samples_per_outcome, layer_name):
         uncond_entropy = self.compute_unconditional_entropy(layer_samples)
 
         #print "Unconditional entropy:", uncond_entropy
@@ -29,19 +29,19 @@ class MutualInformationEstimator():
         mutual_information = uncond_entropy
         for i in range(self.input_dataset.shape[0]):
             curr_outcome = self.input_dataset[i]
-            cond_entr = self.compute_conditional_entropy(curr_outcome, num_samples_per_outcome)
+            cond_entr = self.compute_conditional_entropy(curr_outcome, num_samples_per_outcome, layer_name)
             #print "Conditional entropy sample {}: {}".format(curr_outcome, cond_entr)
             cond_entropy = self.data_distribution(curr_outcome) * cond_entr
             mutual_information -= cond_entropy
 
         return mutual_information
 
-    def compute_conditional_entropy(self, sample, num_samples_per_outcome):
+    def compute_conditional_entropy(self, sample, num_samples_per_outcome, layer_name):
         # Compute outputs for sample from different noise realizations
         assert sample.shape[0] == 1
         inputs = np.tile(sample, (num_samples_per_outcome,1))
         _, model_outputs = self.model(torch.from_numpy(inputs).float().to(self.device))
-        model_outputs = model_outputs.detach().cpu().numpy()
+        model_outputs = model_outputs[layer_name].detach().cpu().numpy()
 
         # estimated_conditional_distribution is the estimated distribution for 
         # p_{T_\ell | X = x_i} = p_{S_\ell | X = x_i} \ast \phi \approx \hat{p}_{S_\ell}^{(i)} \ast \phi
