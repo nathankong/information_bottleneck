@@ -47,10 +47,10 @@ class MutualInformationEstimator():
         # p_{T_\ell | X = x_i} = p_{S_\ell | X = x_i} \ast \phi \approx \hat{p}_{S_\ell}^{(i)} \ast \phi
         estimated_conditional_distribution = lambda x: (1./num_samples_per_outcome)* \
                                                 np.sum(self.noise_distribution(x - model_outputs))
-        integrand = lambda x: -1. * estimated_conditional_distribution(x) * np.log(estimated_conditional_distribution(x) + self.tol)
+        integrand = lambda x: -1. * estimated_conditional_distribution(x) * np.log(estimated_conditional_distribution(x) + self.tol) + (10.*self.tol)
 
         # SP estimator: h(p_{T_\ell | X = x_i}) \approx h(\hat{p}_{S_{\ell}^{(i)}} \ast \phi)
-        conditional_entropy, _ = integrate.quad(integrand, -10, 10)
+        conditional_entropy, _ = integrate.quad(integrand, -100, 100)
 
         return conditional_entropy
 
@@ -69,10 +69,10 @@ class MutualInformationEstimator():
         #print((estimated_distribution(0)))
 
         # Integrand for computing the entropy. i.e. f(x) log (1/f(x))
-        integrand = lambda x: -1. * estimated_distribution(x) * np.log(estimated_distribution(x) + self.tol)
+        integrand = lambda x: -1. * estimated_distribution(x) * np.log(estimated_distribution(x) + self.tol) + (10.*self.tol)
 
         # SP estimator: h(p_{T_\ell}) \approx h(\hat{p}_{S_\ell} \ast \phi)
-        unconditional_entropy, _ = integrate.quad(integrand, -10, 10)
+        unconditional_entropy, _ = integrate.quad(integrand, -100, 100)
         #print(unconditional_entropy, err)
 
         return unconditional_entropy

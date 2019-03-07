@@ -57,7 +57,13 @@ if __name__ == "__main__":
     parser.add_argument('--beta', type=float, default=0.05)
     parser.add_argument('--noise', type=bool, default=False)
     parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--results_dir', type=str, default="")
     args = parser.parse_args()
+
+    # Results dir
+    if args.results_dir == "":
+        assert 0, "Need results directory."
+    print("Results directory:", args.results_dir)
 
     # Use GPU or not
     cuda = torch.cuda.is_available()
@@ -118,7 +124,7 @@ if __name__ == "__main__":
 
             # Get noise samples
             gen_noise_outputs, gen_outputs = sample(m, num_samp=1000)
-            np.save("results/four/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
+            np.save(args.results_dir + "/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
 
             # Compute MI
             curr_mutual_info = mi.compute_mutual_information(gen_outputs["output"].detach().cpu().numpy(), 1000, "output")
@@ -149,8 +155,8 @@ if __name__ == "__main__":
     print("Random out label:", new_set_y.T)
 
     # Save stuff
-    np.save("results/four/accuracies.npy", accs)
-    np.save("results/four/mutual_information.npy", mutual_info)
+    np.save(args.results_dir + "/accuracies.npy", accs)
+    np.save(args.results_dir + "/mutual_information.npy", mutual_info)
 
 
 
