@@ -2,6 +2,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
 
+import os
+
 import numpy as np
 
 import torch
@@ -63,6 +65,8 @@ if __name__ == "__main__":
     # Results dir
     if args.results_dir == "":
         assert 0, "Need results directory."
+    if not os.path.exists(args.results_dir):
+        os.makedirs(args.results_dir)
     print("Results directory:", args.results_dir)
 
     # Use GPU or not
