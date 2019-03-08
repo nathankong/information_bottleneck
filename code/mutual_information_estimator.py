@@ -50,7 +50,7 @@ class MutualInformationEstimator():
         integrand = lambda x: -1. * estimated_conditional_distribution(x) * np.log(estimated_conditional_distribution(x) + self.tol)# + (10.*self.tol)
 
         # SP estimator: h(p_{T_\ell | X = x_i}) \approx h(\hat{p}_{S_{\ell}^{(i)}} \ast \phi)
-        conditional_entropy, _ = integrate.quad(integrand, -20, 20)
+        conditional_entropy, _ = integrate.quad(integrand, -10, 10)
 
         return conditional_entropy
 
@@ -72,7 +72,7 @@ class MutualInformationEstimator():
         integrand = lambda x: -1. * estimated_distribution(x) * np.log(estimated_distribution(x) + self.tol)# + (10.*self.tol)
 
         # SP estimator: h(p_{T_\ell}) \approx h(\hat{p}_{S_\ell} \ast \phi)
-        unconditional_entropy, _ = integrate.quad(integrand, -20, 20)
+        unconditional_entropy, _ = integrate.quad(integrand, -10, 10)
         #print(unconditional_entropy, err)
 
         return unconditional_entropy
