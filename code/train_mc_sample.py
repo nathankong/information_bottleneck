@@ -16,7 +16,7 @@ from mutual_information_estimator_continuous import MutualInformationEstimator
 from utils import UnivariateGaussian, UniformDataDistribution
 
 
-def sample(m, num_samp=1000):
+def sample(m, device, num_samp=1000):
     X, _ = build_dataset(num_samp)
     output_noise, output = m(torch.from_numpy(X).float().to(device))
     return output_noise, output
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     # Use GPU or not
     cuda = torch.cuda.is_available()
-    cuda = False
+    #cuda = False
     device = torch.device('cuda' if cuda else 'cpu')
     print("Using cuda:", cuda)
     print("Device:", device)
@@ -122,12 +122,14 @@ if __name__ == "__main__":
     mutual_info = np.zeros((args.epochs,))
     for i in xrange(args.epochs):
         if (i+1) % 1 == 0:
+            # Convert to CPU
             m.eval()
-            acc, test_out_noise, test_y = test_model(m, test_loader, device)
+            m.to(torch.device("cpu"))
+            acc, test_out_noise, test_y = test_model(m, test_loader, torch.device("cpu"))
             accs[i] = acc
 
             # Get noise samples
-            gen_noise_outputs, gen_outputs = sample(m, num_samp=1000)
+            gen_noise_outputs, gen_outputs = sample(m, torch.device("cpu"), num_samp=1000)
             np.save(args.results_dir + "/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
 
             # Compute MI
@@ -136,7 +138,9 @@ if __name__ == "__main__":
 
             print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
 
+        # Convert back to original device
         m.train()
+        m.to(device)
         for batch_idx, (data_x, data_y) in enumerate(train_loader):
             data_x, data_y = data_x.to(device), data_y.to(device) 
 

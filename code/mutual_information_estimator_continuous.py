@@ -6,6 +6,7 @@ import scipy.integrate as integrate
 import dill
 
 class MutualInformationEstimator():
+    # Note that the multiprocessing only works if things are run on the CPU
     def __init__(self, model, device, noise_distribution, data_distribution, input_dataset):
         # samples: (N,)
         # noise_distribution is a function that computes the probability of a sample (outputs a scalar)
@@ -18,15 +19,15 @@ class MutualInformationEstimator():
         assert input_dataset.shape[1] == 1 and input_dataset.ndim == 2
 
         self.model = model
-        self.device = device
+        #self.device = device
         self.noise_distribution = noise_distribution
         self.data_distribution = data_distribution
         self.input_dataset = input_dataset
         self.tol = 1e-10
 
     def compute_mutual_information(self, layer_samples, num_samples_per_outcome, layer_name, data_distribution_sampler=None, num_mc_samples=1000):
-        if self.device == torch.device("cuda"):
-            self.model = self.model.to(torch.device("cpu"))
+        #if self.device == torch.device("cuda"):
+        #    self.model = self.model.to(torch.device("cpu"))
 
         uncond_entropy = self.compute_unconditional_entropy(layer_samples)
     
@@ -41,7 +42,7 @@ class MutualInformationEstimator():
     
         # TODO: We assume, for the time being, that the samples are one dimensional so that
         # samples.shape == (num_samples,)
-        p = Pool(processes=50)
+        p = Pool(processes=10)
         jobs = list()
         for i in range(num_samples):
             arg = [samples[i], num_samples_per_outcome, layer_name]
@@ -51,14 +52,16 @@ class MutualInformationEstimator():
         results = list()
         for job in jobs:
             results.append(job.get())
+        p.close()
+        p.join()
 
         cond_entropy = 1. / num_mc_samples * np.sum(results)
     
         #cond_entropy =  1. / num_mc_samples * cond_entr
         mutual_information -= cond_entropy
 
-        if self.device == torch.device("cuda"):
-            self.model = self.model.to(torch.device("cuda"))
+        #if self.device == torch.device("cuda"):
+        #    self.model = self.model.to(torch.device("cuda"))
     
         return mutual_information
     
