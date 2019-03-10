@@ -60,7 +60,11 @@ if __name__ == "__main__":
     parser.add_argument('--noise', type=bool, default=False)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--results_dir', type=str, default="")
+    parser.add_argument('--num_mc_samples', type=int, default=100)
     args = parser.parse_args()
+
+    # MC samples
+    print("Number of MC samples:", args.num_mc_samples)
 
     # Results dir
     if args.results_dir == "":
@@ -111,10 +115,8 @@ if __name__ == "__main__":
     # Mutual information estimator
     mi = MutualInformationEstimator(
         m,
-        torch.device("cpu"),
-        noise_distr.compute_probability,
-        data_distr.compute_probability,
-        np.array([-3,-1,1,3]).reshape(4,1)
+        noise_distr,
+        data_distr
     )
 
     # Start the training
@@ -137,8 +139,7 @@ if __name__ == "__main__":
                 gen_outputs["output"].detach().cpu().numpy(),
                 1000,
                 "output",
-                data_distribution_sampler=data_distr.sample,
-                num_mc_samples=100
+                args.num_mc_samples
             )
             mutual_info[i] = curr_mutual_info
 
