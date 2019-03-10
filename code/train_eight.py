@@ -12,7 +12,7 @@ from torch import optim
 
 from dataset import ScalarDatasetEight, build_dataset_eight
 from model import NoiseModelReLU
-from mutual_information_estimator import MutualInformationEstimator
+from mutual_information_estimator_discrete import MutualInformationEstimator
 from utils import UnivariateGaussian, UniformDataDistribution
 
 
