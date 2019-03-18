@@ -46,6 +46,36 @@ class NoiseModel(nn.Module):
 
         return ps_noise, activation_dict
 
+
+class NoiseModelSingleNeuronReLU(nn.Module):
+    def __init__(self, beta=None, x_dim=1, out_dim=1):
+        super(NoiseModelSingleNeuronReLU, self).__init__()
+        assert beta is not None
+        self.beta = beta
+        self.x_dim = x_dim
+        self.out_dim = out_dim
+
+        #self.non_lin = torch.nn.LeakyReLU(negative_slope=0.1)
+        self.non_lin = torch.tanh
+
+        # Define layer
+        self.lin_x_to_output = nn.Linear(x_dim, out_dim)
+
+    def forward(self, x):
+        h = self.lin_x_to_output(x)
+        ps = self.non_lin(h)
+
+        # Add noise from N(0, beta^2)
+        z = torch.randn(x.size(), device=x.device) * self.beta
+        ps_noise = ps + z
+
+        activation_dict = dict()
+        activation_dict["output"] = ps
+        activation_dict["output_noise"] = ps_noise
+
+        return ps_noise, activation_dict
+
+
 class NoiseModelReLU(nn.Module):
     # Assuming single dimension only
     def __init__(self, beta=None, x_dim=1, h1_dim=1, out_dim=1):

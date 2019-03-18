@@ -96,13 +96,23 @@ def build_gaussian_mixture_dataset(N, n_components, means, variances, mixture_pr
     # means: (n_components, dimension)
     # variances: (n_components, dimension, dimension)
     # mixture_probs: (n_components,)
+    # TODO: We are currently assuming one dimensional input
     dimension = means.shape[1]
+    assert dimension == 1
 
     component_idx = np.random.choice(n_components, size=N, replace=True, p=mixture_probs)
     X = [sps.multivariate_normal.rvs(means[i,:], variances[i,:,:]) for i in component_idx]
     X = np.array(X).reshape(N,dimension)
 
-    Y = component_idx.reshape(N,1)
+    X = X.reshape((N,))
+
+    #Y = component_idx.reshape(N,1)
+    Y = np.zeros((N,))
+    Y[X<=0] = -1
+    Y[X>0] = 1
+
+    X = X.reshape((N,1))
+    Y = Y.reshape((N,1))
 
     return X, Y
 

@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch import optim
 
 from dataset import GaussianMixtureDataset, build_gaussian_mixture_dataset
-from model import NoiseModel
+from model import NoiseModel, NoiseModelSingleNeuronReLU
 from mutual_information_estimator_continuous import MutualInformationEstimator
 # TODO: Need to remove UniformDataDistribution and modify to Gaussian mixture PDF
 from utils import UnivariateGaussian, UniformDataDistribution
@@ -47,15 +47,17 @@ def test_model(m, test_loader, device):
 def compute_acc(model_out, true_out):
     # model_out = tanh values
     assert model_out.shape[0] == true_out.shape[0]
-    model_out[model_out<=0.5] = 0
-    model_out[model_out>0.5] = 1
+    #model_out[model_out<=0.5] = 0
+    #model_out[model_out>0.5] = 1
+    model_out[model_out<0] = -1
+    model_out[model_out>=0] = 1
     correct = np.sum((model_out==true_out).astype(int))
     return correct / true_out.shape[0]
 
 
 if __name__ == "__main__":
     # Sample size
-    N = 100
+    N = 30
 
     import argparse
     parser = argparse.ArgumentParser()
@@ -95,10 +97,16 @@ if __name__ == "__main__":
     print("Learning rate:", args.lr)
 
     # Dataset
-    n_components = 2
-    means = np.array([-1,1]).reshape(n_components,1)
-    variances = np.array([0.1,0.1]).reshape(n_components,1,1)
-    mixture_probs = np.array([0.5,0.5])
+    #n_components = 2
+    #means = np.array([-1,1]).reshape(n_components,1)
+    #variances = np.array([0.1,0.1]).reshape(n_components,1,1)
+    #mixture_probs = np.array([0.5,0.5])
+
+    n_components = 3
+    means = np.array([-2,0,2]).reshape(n_components,1)
+    variances = np.array([0.1,0.1,0.1]).reshape(n_components,1,1)
+    mixture_probs = np.ones((n_components,), dtype=np.float) / n_components
+
     train_dataset = GaussianMixtureDataset(N, n_components, means, variances, mixture_probs)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
@@ -109,7 +117,9 @@ if __name__ == "__main__":
     if not args.noise:
         assert 0, "Should only run noise model."
     else:
-        m = NoiseModel(beta=args.beta) # Add noise to layer
+        #m = NoiseModel(beta=args.beta) # Add noise to layer
+        m = NoiseModelSingleNeuronReLU(beta=args.beta)
+        #m = NoiseModelReLU(beta=args.beta)
     m = m.to(device)
 
     # Optimizer
@@ -162,6 +172,9 @@ if __name__ == "__main__":
 #            mutual_info[i] = curr_mutual_info
 
             print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
+            if acc >= 0.99:
+                for g in optimizer.param_groups:
+                    g['lr'] = args.lr / 20.
 
         m.train()
         m.to(device)
@@ -178,6 +191,31 @@ if __name__ == "__main__":
     # Diagnostics
     for param in m.parameters():
         print("Weight:", param.data)
+
+    n_components = 3
+    means = np.array([-2,0,2]).reshape(n_components,1)
+    variances = np.array([0.1,0.1,0.1]).reshape(n_components,1,1)
+    mixture_probs = np.ones((n_components,), dtype=np.float) / n_components
+    new_set_x, new_set_y = build_gaussian_mixture_dataset(
+        10,
+        n_components,
+        means,
+        variances,
+        mixture_probs
+    )
+    model_y = np.tanh(1.0556*new_set_x + 0.1573)
+    print("True out:", new_set_y.T)
+    print("Model out:",  model_y.T)
+    new_set_x, new_set_y = build_gaussian_mixture_dataset(
+        10,
+        n_components,
+        means,
+        variances,
+        mixture_probs
+    )
+    print("Random out:", new_set_x.T)
+    print("Random out label:", new_set_y.T)
+
 
     # Save stuff
     np.save(args.results_dir + "/accuracies.npy", np.array(accs))
