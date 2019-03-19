@@ -42,7 +42,6 @@ class UnivariateGaussian():
 class UniformDataDistribution():
     # Univariate
     def __init__(self, total_outcomes, outcomes=None):
-        # TODO: Assuming one dimensional values
         if outcomes is not None:
             assert outcomes.shape[0] == total_outcomes
 
