@@ -102,9 +102,14 @@ if __name__ == "__main__":
     #variances = np.array([0.1,0.1]).reshape(n_components,1,1)
     #mixture_probs = np.array([0.5,0.5])
 
-    n_components = 3
-    means = np.array([-2,0,2]).reshape(n_components,1)
-    variances = np.array([0.1,0.1,0.1]).reshape(n_components,1,1)
+    #n_components = 3
+    #means = np.array([-5,-2,2]).reshape(n_components,1)
+    #variances = np.array([0.1,0.1,0.1]).reshape(n_components,1,1)
+    #mixture_probs = np.ones((n_components,), dtype=np.float) / n_components
+
+    n_components = 2
+    means = np.array([-1,1]).reshape(n_components,1)
+    variances = np.array([0.25,0.25]).reshape(n_components,1,1)
     mixture_probs = np.ones((n_components,), dtype=np.float) / n_components
 
     train_dataset = GaussianMixtureDataset(N, n_components, means, variances, mixture_probs)
