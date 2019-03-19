@@ -24,7 +24,6 @@ class MutualInformationEstimator():
     
         mutual_information = uncond_entropy
         samples = self.data_distribution.sample(num_mc_samples) # Samples num_mc_samples from distribution
-        print samples.shape
     
         # TODO: We assume, for the time being, that the samples are one dimensional so that
         # samples.shape == (num_samples,)
