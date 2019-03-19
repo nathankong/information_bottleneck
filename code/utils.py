@@ -58,15 +58,26 @@ class UniformDataDistribution():
         return self.outcomes[ind,:]
 
 
-class GaussianMixtureDistribution():
+class GaussianMixtureDataDistribution():
     def __init__(self, n_components, means, variances, mixture_probs):
+        assert n_components == means.shape[0]
+        assert n_components == variances.shape[0]
+        assert n_components == mixture_probs.shape[0] and mixture_probs.ndim == 1
+        assert means.shape[1] == variances.shape[1] == variances.shape[2]
+
         self.n_components = n_components
         self.means = means
         self.variances = variances
         self.mixture_probs = mixture_probs
+        self.dimension = self.means.shape[1]
 
     def compute_probability(self, x):
-        pass
+        prob = 0.0
+        for i in range(self.n_components):
+            m = self.means[i,:]
+            v = self.variances[i,:]
+            prob = prob + scipy.stats.multivariate_normal.pdf(x, mean=m, cov=v) * self.mixture_probs[i]
+        return prob
 
     def sample(self, N):
         component_idx = np.random.choice(
@@ -76,9 +87,7 @@ class GaussianMixtureDistribution():
             p=self.mixture_probs
         )
         X = [scipy.stats.multivariate_normal.rvs(self.means[i,:], self.variances[i,:,:]) for i in component_idx]
-        X = np.array(X).reshape(N,dimension)
-
-        X = X.reshape((N,))
+        X = np.array(X).reshape(N,self.dimension)
 
         return X
 

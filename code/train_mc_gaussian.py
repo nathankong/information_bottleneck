@@ -14,7 +14,7 @@ from dataset import GaussianMixtureDataset, build_gaussian_mixture_dataset
 from model import NoiseModel, NoiseModelSingleNeuronReLU
 from mutual_information_estimator_continuous import MutualInformationEstimator
 # TODO: Need to remove UniformDataDistribution and modify to Gaussian mixture PDF
-from utils import UnivariateGaussian, UniformDataDistribution
+from utils import UnivariateGaussian, GaussianMixtureDataDistribution
 
 
 def sample(m, device, n_components, means, variances, mixture_probs, num_samp=1000):
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     parser.add_argument('--noise', type=bool, default=False)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--results_dir', type=str, default="")
-    parser.add_argument('--num_mc_samples', type=int, default=200)
+    parser.add_argument('--num_mc_samples', type=int, default=500)
     args = parser.parse_args()
 
     # MC samples
@@ -133,8 +133,7 @@ if __name__ == "__main__":
 
     # Set up probability distributions
     noise_distr = UnivariateGaussian(0, np.square(args.beta))
-    # TODO: ADD THE APPROPRIATE GAUSSIAN MIXTURE PDF
-    data_distr = UniformDataDistribution(8, outcomes=np.array([1,2,3,4,5,6,7,8]).reshape(8,1))
+    data_distr = GaussianMixtureDataDistribution(n_components, means, variances, mixture_probs)
 
     # Mutual information estimator
     mi = MutualInformationEstimator(
@@ -167,14 +166,13 @@ if __name__ == "__main__":
             np.save(args.results_dir + "/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
 
             # Compute MI
-            curr_mutual_info = 0.0 # TODO: FIX AFTER TRAINING SUCCESSFUL
-#            curr_mutual_info = mi.compute_mutual_information(
-#                gen_outputs["output"].detach().cpu().numpy(),
-#                1000,
-#                "output",
-#                args.num_mc_samples
-#            )
-#            mutual_info[i] = curr_mutual_info
+            curr_mutual_info = mi.compute_mutual_information(
+                output_dict["output"].detach().cpu().numpy(),
+                1000,
+                "output",
+                args.num_mc_samples
+            )
+            mutual_info.append(curr_mutual_info)
 
             print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
             if acc >= 0.99:
