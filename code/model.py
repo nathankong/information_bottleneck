@@ -61,6 +61,9 @@ class NoiseModelSingleNeuronReLU(nn.Module):
         # Define layer
         self.lin_x_to_output = nn.Linear(x_dim, out_dim)
 
+        nn.init.zeros_(self.lin_x_to_output.weight)
+        nn.init.zeros_(self.lin_x_to_output.bias)
+
     def forward(self, x):
         h = self.lin_x_to_output(x)
         ps = self.non_lin(h)

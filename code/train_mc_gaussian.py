@@ -13,7 +13,6 @@ from torch import optim
 from dataset import GaussianMixtureDataset, build_gaussian_mixture_dataset
 from model import NoiseModel, NoiseModelSingleNeuronReLU
 from mutual_information_estimator_continuous import MutualInformationEstimator
-# TODO: Need to remove UniformDataDistribution and modify to Gaussian mixture PDF
 from utils import UnivariateGaussian, GaussianMixtureDataDistribution
 
 
