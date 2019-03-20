@@ -66,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--results_dir', type=str, default="")
     parser.add_argument('--num_mc_samples', type=int, default=500)
+    parser.add_argument('--data_distr', type=str, default="mix")
     args = parser.parse_args()
 
     # MC samples
@@ -93,11 +94,11 @@ if __name__ == "__main__":
     # Learning rate
     print("Learning rate:", args.lr)
 
-    # Dataset: two Gaussians
-    print("Using two Gaussians mixture.")
-    n_components = 2
-    means = np.array([-1,1]).reshape(n_components,1)
-    variances = np.array([0.25,0.25]).reshape(n_components,1,1)
+    # Data set: single Gaussian
+    print("Using single Gaussian.")
+    n_components = 1
+    means = np.array([0]).reshape(n_components,1)
+    variances = np.array([0.25]).reshape(n_components,1,1)
     mixture_probs = np.ones((n_components,), dtype=np.float) / n_components
 
     train_dataset = GaussianMixtureDataset(N, n_components, means, variances, mixture_probs)
@@ -110,7 +111,7 @@ if __name__ == "__main__":
     if not args.noise:
         assert 0, "Should only run noise model."
     else:
-        m = NoiseModel(beta=args.beta)
+        m = NoiseModelTwoNeuronTanh(beta=args.beta)
     m = m.to(device)
 
     # Optimizer
@@ -130,7 +131,8 @@ if __name__ == "__main__":
 
     # Start the training
     accs = list()
-    mutual_info = list()
+    mutual_info_layer1 = list()
+    mutual_info_layer2 = list()
     losses = list()
     for i in xrange(args.epochs):
         if (i+1) % 1 == 0:
@@ -150,17 +152,32 @@ if __name__ == "__main__":
                 num_samp=1000
             )
             np.save(args.results_dir + "/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
+            np.save(args.results_dir + "/epoch_{}_h1_noise.npy".format(i+1), output_dict["hidden_noise"].detach().cpu().numpy())
 
             # Compute MI
-            curr_mutual_info = mi.compute_mutual_information(
+            curr_mutual_info_1 = mi.compute_mutual_information(
+                output_dict["hidden"].detach().cpu().numpy(),
+                1000,
+                "hidden",
+                args.num_mc_samples
+            )
+            mutual_info_layer1.append(curr_mutual_info_1)
+            curr_mutual_info_2 = mi.compute_mutual_information(
                 output_dict["output"].detach().cpu().numpy(),
                 1000,
                 "output",
                 args.num_mc_samples
             )
-            mutual_info.append(curr_mutual_info)
+            mutual_info_layer2.append(curr_mutual_info_2)
 
-            print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))
+            print("Epoch {}; Layer 1 MI {}; Layer 2 MI {}; Acc {}".format(
+                i+1,
+                curr_mutual_info_1,
+                curr_mutual_info_2,
+                acc)
+            )
+
+            # Reduce learning rate here
             if acc >= 0.99:
                 for g in optimizer.param_groups:
                     g['lr'] = args.lr / 20.
@@ -178,9 +195,9 @@ if __name__ == "__main__":
 
     # Save stuff
     np.save(args.results_dir + "/accuracies.npy", np.array(accs))
-    np.save(args.results_dir + "/mutual_information.npy", np.array(mutual_info))
+    np.save(args.results_dir + "/mutual_information_layer1.npy", np.array(mutual_info_layer1))
+    np.save(args.results_dir + "/mutual_information_layer2.npy", np.array(mutual_info_layer2))
     np.save(args.results_dir + "/losses.npy", np.array(losses))
-
 
 
 

@@ -46,7 +46,6 @@ class NoiseModel(nn.Module):
 
         return ps_noise, activation_dict
 
-
 class NoiseModelSingleNeuronReLU(nn.Module):
     def __init__(self, beta=None, x_dim=1, out_dim=1):
         super(NoiseModelSingleNeuronReLU, self).__init__()
@@ -116,6 +115,43 @@ class NoiseModelReLU(nn.Module):
         #h_noise_lin = self.lin_h1_to_output(h_noise)
         #out = torch.max(h_noise_lin, h_noise_lin/10.)
 
+        out_noise = out + (torch.randn(out.size(), device=x.device) * self.beta)
+
+        activation_dict = dict()
+        activation_dict["hidden"] = h
+        activation_dict["hidden_noise"] = h_noise
+        activation_dict["output"] = out
+        activation_dict["output_noise"] = out_noise
+
+        return out_noise, activation_dict
+
+
+class NoiseModelTwoNeuronTanh(nn.Module):
+    # Assuming single dimension only
+    def __init__(self, beta=None, x_dim=1, h1_dim=1, out_dim=1):
+        super(NoiseModelTwoNeuronTanh, self).__init__()
+        assert beta is not None
+        self.beta = beta
+        self.x_dim = x_dim
+        self.h1_dim = h1_dim
+        self.out_dim = out_dim
+
+        # Define layers (only one hidden layer)
+        self.lin_x_to_h1 = nn.Linear(x_dim, h1_dim)
+        self.lin_h1_to_output = nn.Linear(h1_dim, out_dim)
+        self.nonlin = torch.tanh
+
+        # Initialize weights
+        nn.init.zeros_(self.lin_x_to_h1.weight)
+        nn.init.zeros_(self.lin_x_to_h1.bias)
+        nn.init.zeros_(self.lin_h1_to_output.weight)
+        nn.init.zeros_(self.lin_h1_to_output.bias)
+
+    def forward(self, x):
+        h = self.nonlin(self.lin_x_to_h1(x))
+        h_noise = h + (torch.randn(h.size(), device=x.device) * self.beta)
+
+        out = self.nonlin(self.lin_h1_to_output(h_noise))
         out_noise = out + (torch.randn(out.size(), device=x.device) * self.beta)
 
         activation_dict = dict()
