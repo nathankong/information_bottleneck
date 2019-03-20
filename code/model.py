@@ -140,6 +140,7 @@ class NoiseModelTwoNeuronTanh(nn.Module):
         self.lin_x_to_h1 = nn.Linear(x_dim, h1_dim)
         self.lin_h1_to_output = nn.Linear(h1_dim, out_dim)
         self.nonlin = torch.tanh
+        self.leaky_relu = torch.nn.LeakyReLU(negative_slope=0.1)
 
         # Initialize weights
         nn.init.zeros_(self.lin_x_to_h1.weight)
@@ -149,6 +150,7 @@ class NoiseModelTwoNeuronTanh(nn.Module):
 
     def forward(self, x):
         h = self.nonlin(self.lin_x_to_h1(x))
+        #h = self.leaky_relu(self.lin_x_to_h1(x))
         h_noise = h + (torch.randn(h.size(), device=x.device) * self.beta)
 
         out = self.nonlin(self.lin_h1_to_output(h_noise))
@@ -161,5 +163,6 @@ class NoiseModelTwoNeuronTanh(nn.Module):
         activation_dict["output_noise"] = out_noise
 
         return out_noise, activation_dict
+
 
 

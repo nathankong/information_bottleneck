@@ -36,7 +36,8 @@ class UnivariateGaussian():
         return scipy.stats.norm(self.mu,std).pdf(x)
 
     def sample(self, N):
-        return np.random.normal(mu, std, N)
+        std = np.sqrt(self.var)
+        return np.random.normal(self.mu, std, N)
 
 
 class UniformDataDistribution():

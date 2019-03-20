@@ -170,6 +170,12 @@ if __name__ == "__main__":
             )
             mutual_info_layer2.append(curr_mutual_info_2)
 
+            # TODO: DELETE WHEN DONE TESTING
+#            curr_mutual_info_1 = 0
+#            curr_mutual_info_2 = 0
+#            mutual_info_layer1.append(curr_mutual_info_1)
+#            mutual_info_layer2.append(curr_mutual_info_2)
+
             print("Epoch {}; Layer 1 MI {}; Layer 2 MI {}; Acc {}".format(
                 i+1,
                 curr_mutual_info_1,
