@@ -128,18 +128,19 @@ class NoiseModelReLU(nn.Module):
 
 class NoiseModelTwoNeuronTanh(nn.Module):
     # Assuming single dimension only
-    def __init__(self, beta=None, x_dim=1, h1_dim=1, out_dim=1):
+    def __init__(self, beta=None, x_dim=1, h1_dim=1, out_dim=1, use_tanh=False):
         super(NoiseModelTwoNeuronTanh, self).__init__()
         assert beta is not None
         self.beta = beta
         self.x_dim = x_dim
         self.h1_dim = h1_dim
         self.out_dim = out_dim
+        self.use_tanh = use_tanh
 
         # Define layers (only one hidden layer)
         self.lin_x_to_h1 = nn.Linear(x_dim, h1_dim)
         self.lin_h1_to_output = nn.Linear(h1_dim, out_dim)
-        self.nonlin = torch.tanh
+        self.tanh = torch.tanh
         self.leaky_relu = torch.nn.LeakyReLU(negative_slope=0.1)
 
         # Initialize weights
@@ -149,11 +150,14 @@ class NoiseModelTwoNeuronTanh(nn.Module):
         nn.init.zeros_(self.lin_h1_to_output.bias)
 
     def forward(self, x):
-        h = self.nonlin(self.lin_x_to_h1(x))
-        #h = self.leaky_relu(self.lin_x_to_h1(x))
+        if self.use_tanh:
+            h = self.tanh(self.lin_x_to_h1(x))
+        else:
+            assert self.use_tanh == False
+            h = self.leaky_relu(self.lin_x_to_h1(x))
         h_noise = h + (torch.randn(h.size(), device=x.device) * self.beta)
 
-        out = self.nonlin(self.lin_h1_to_output(h_noise))
+        out = self.tanh(self.lin_h1_to_output(h_noise))
         out_noise = out + (torch.randn(out.size(), device=x.device) * self.beta)
 
         activation_dict = dict()

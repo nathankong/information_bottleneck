@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--results_dir', type=str, default="")
     parser.add_argument('--num_mc_samples', type=int, default=500)
-    parser.add_argument('--data_distr', type=str, default="mix")
+    parser.add_argument('--use_tanh', action='store_true')
     args = parser.parse_args()
 
     # MC samples
@@ -111,7 +111,8 @@ if __name__ == "__main__":
     if not args.noise:
         assert 0, "Should only run noise model."
     else:
-        m = NoiseModelTwoNeuronTanh(beta=args.beta)
+        print("Using tanh for hidden non-linearity:", args.use_tanh)
+        m = NoiseModelTwoNeuronTanh(beta=args.beta, use_tanh=args.use_tanh)
     m = m.to(device)
 
     # Optimizer
