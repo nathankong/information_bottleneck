@@ -54,7 +54,7 @@ def compute_acc(model_out, true_out):
 
 if __name__ == "__main__":
     # Sample size
-    N = 30
+    N = 100
 
     import argparse
     parser = argparse.ArgumentParser()

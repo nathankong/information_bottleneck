@@ -54,7 +54,7 @@ def compute_acc(model_out, true_out):
 
 if __name__ == "__main__":
     # Sample size
-    N = 30
+    N = 100
 
     import argparse
     parser = argparse.ArgumentParser()
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=25)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--beta', type=float, default=0.05)
-    parser.add_argument('--noise', type=bool, default=False)
+    parser.add_argument('--noise', action='store_true')
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--results_dir', type=str, default="")
     parser.add_argument('--num_mc_samples', type=int, default=500)
