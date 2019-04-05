@@ -48,12 +48,12 @@ if __name__ == "__main__":
     # python information_bottleneck/code/train_eight.py --epochs 300 --batch_size 100 --noise True --beta 0.05 --lr 0.0001
 
     # Sample size
-    N = 100
+    N = 1000
 
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=1000)
-    parser.add_argument('--batch_size', type=int, default=25)
+    parser.add_argument('--batch_size', type=int, default=200)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--beta', type=float, default=0.05)
     parser.add_argument('--noise', action='store_true')
@@ -167,6 +167,7 @@ if __name__ == "__main__":
 
             output_noise, _ = m(data_x)
             loss = loss_func(output_noise, data_y)
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             #print("Loss val {}".format(loss.item()))

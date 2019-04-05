@@ -54,12 +54,12 @@ def compute_acc(model_out, true_out):
 
 if __name__ == "__main__":
     # Sample size
-    N = 100
+    N = 1000
 
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=1000)
-    parser.add_argument('--batch_size', type=int, default=25)
+    parser.add_argument('--batch_size', type=int, default=100)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--beta', type=float, default=0.05)
     parser.add_argument('--noise', action='store_true')
@@ -196,6 +196,7 @@ if __name__ == "__main__":
 
             output_noise, _ = m(data_x)
             loss = loss_func(output_noise, data_y)
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             losses.append(loss.item())
