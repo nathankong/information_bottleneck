@@ -95,12 +95,22 @@ if __name__ == "__main__":
         d = 2
         dom = np.array([[0,1],[0,1]])
 
+        import time
+        s = time.time()
         numerical_int, _ = integrate.nquad(lambda x, y: x + y, [[0,1],[0,1]])
+        print "Numerical integration value: {}".format(numerical_int)
+        print "Time for numerical integration: {}".format(time.time() - s)
+
         for i in range(num_trials):
             N = int(Ns[i])
             m = MonteCarloIntegrator(f, dom, N, d)
             val = m.integrate()
             Ms[i] = val
+
+        m = MonteCarloIntegrator(f, dom, int(Ns[-1]), d)
+        s = time.time()
+        print "Monte Carlo integration value: {}".format(m.integrate())
+        print "Time for Monte Carlo integration: {}".format(time.time() - s)
 
         plt.figure()
         #plt.plot(Ns, np.square(Ms - numerical_int))
