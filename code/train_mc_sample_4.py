@@ -133,13 +133,12 @@ if __name__ == "__main__":
             np.save(args.results_dir + "/epoch_{}_outputs_noise.npy".format(i+1), gen_noise_outputs.detach().cpu().numpy())
 
             # Compute MI
-#            curr_mutual_info = mi.compute_mutual_information(
-#                gen_outputs["output"].detach().cpu().numpy(),
-#                1000,
-#                "output",
-#                args.num_mc_samples
-#            )
-            curr_mutual_info = 0.0
+            curr_mutual_info = mi.compute_mutual_information(
+                gen_outputs["output"].detach().cpu().numpy(),
+                1000,
+                "output",
+                args.num_mc_samples
+            )
             mutual_info[i] = curr_mutual_info
 
             print("Epoch {}; MI {}; Acc {}".format(i+1, curr_mutual_info, acc))

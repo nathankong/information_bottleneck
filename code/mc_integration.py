@@ -33,7 +33,6 @@ class MonteCarloIntegrator():
     def integrate(self):
         samples = self._sample_from_domain()
         func_values = self._compute_function_values(samples)
-        assert func_values.shape[1] == 1, "Function must map to scalars."
 
         return 1./self.N * np.sum(func_values)
 
@@ -46,7 +45,9 @@ class MonteCarloIntegrator():
 
     def _compute_function_values(self, samples):
         # Returns a numpy array of dimensions (N,1).
-        return self.f(samples)
+        vals = self.f(samples)
+        assert vals.shape[1] == 1, "Function must map to scalars."
+        return vals
 
 
 if __name__ == "__main__":
