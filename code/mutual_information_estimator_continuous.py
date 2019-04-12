@@ -56,19 +56,6 @@ class MutualInformationEstimator():
     
         num_samples = samples.shape[0]
     
-#===================
-#        # TODO: Since we are assuming that hidden dimension is 1, 'x' is a scalar here
-#        estimated_distribution = lambda x: (1./num_samples)*np.sum(self.noise_distribution.compute_probability(x - samples))
-#
-#        # Integrand for computing the entropy. i.e. f(x) log (1/f(x))
-#        integrand = lambda x: -1. * estimated_distribution(x) * np.log(estimated_distribution(x) + 1e-10)
-#    
-#        # SP estimator: h(p_{T_\ell}) \approx h(\hat{p}_{S_\ell} \ast \phi)
-#        unconditional_entropy, _ = integrate.quad(integrand, -10, 10)
-#===================
-
-#===================
-# TODO: CHECK THIS AND RUN A TEST PROGRAM!!!!!!!
         # Using the Monte Carlo Integrator
         num_mc_integration_samples = 1000
         def estimated_distribution(x):
@@ -78,13 +65,12 @@ class MutualInformationEstimator():
 
         def integrand(x):
             # These operations are all elementwise.
-            res = -1. * estimated_distribution(x) * np.log(estimated_distribution(x) + 1e-10)
+            res = -1. * estimated_distribution(x) * np.log(estimated_distribution(x) + self.tol)
             return res.reshape(res.shape[0], 1)
 
         dom = np.array([[-10,10]])
         m_integrator = MonteCarloIntegrator(integrand, dom, num_mc_integration_samples, 1)
         unconditional_entropy = m_integrator.integrate()
-#===================
 
         return unconditional_entropy
     
@@ -99,16 +85,7 @@ class MutualInformationEstimator():
 
         # estimated_conditional_distribution is the estimated distribution for 
         # p_{T_\ell | X = x_i} = p_{S_\ell | X = x_i} \ast \phi \approx \hat{p}_{S_\ell}^{(i)} \ast \phi
-#===================
-#        estimated_conditional_distribution = lambda x: (1./num_samples_per_outcome)*np.sum(self.noise_distribution.compute_probability(x - model_outputs))
-#        integrand = lambda x: -1. * estimated_conditional_distribution(x) * np.log(estimated_conditional_distribution(x) + 1e-10)
-#
-#        # SP estimator: h(p_{T_\ell | X = x_i}) \approx h(\hat{p}_{S_{\ell}^{(i)}} \ast \phi)
-#        conditional_entropy, _ = integrate.quad(integrand, -10, 10)
-#===================
 
-#===================
-# TODO: CHECK THIS AND RUN A TEST PROGRAM!!!!!!!
         num_mc_integration_samples = 1000
         def estimated_conditional_distribution(x):
             # TODO: We are still assuming the hidden layer dimensionality is 1 (see the reshape operation)
@@ -116,13 +93,12 @@ class MutualInformationEstimator():
             return (1./num_samples_per_outcome)*np.sum(self.noise_distribution.compute_probability(x - model_outputs_t), axis=1)
 
         def integrand(x):
-            res = -1. * estimated_conditional_distribution(x) * np.log(estimated_conditional_distribution(x) + 1e-10)
+            res = -1. * estimated_conditional_distribution(x) * np.log(estimated_conditional_distribution(x) + self.tol)
             return res.reshape(res.shape[0],1)
 
         dom = np.array([[-10,10]])
         m_integrator = MonteCarloIntegrator(integrand, dom, num_mc_integration_samples, 1)
         conditional_entropy = m_integrator.integrate()
-#===================
 
         return conditional_entropy
 
