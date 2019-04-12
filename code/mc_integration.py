@@ -1,8 +1,4 @@
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.integrate as integrate
 
 class MonteCarloIntegrator():
     def __init__(self, f, dom, N, d):
@@ -55,6 +51,11 @@ class MonteCarloIntegrator():
 
 if __name__ == "__main__":
 
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import scipy.integrate as integrate
+
     def integrate_single_variable_func():
         # Function of one variable
         def f(x):
@@ -80,6 +81,7 @@ if __name__ == "__main__":
         plt.xlabel("Number of samples")
         #plt.ylabel("Squared Error")
         plt.ylabel("Absolute Error")
+        plt.grid(True)
         plt.savefig("temp.png")
 
     def integrate_double_variable_func():
@@ -118,6 +120,7 @@ if __name__ == "__main__":
         plt.xlabel("Number of samples")
         #plt.ylabel("Squared Error")
         plt.ylabel("Absolute Error")
+        plt.grid(True)
         plt.savefig("temp.png")
 
     np.random.seed(10)
@@ -125,5 +128,4 @@ if __name__ == "__main__":
     integrate_double_variable_func()
 
     
-
 
